@@ -33,7 +33,7 @@ class LoginForm(AuthenticationForm):
         fields = ["username", "password"]
 
 
-class SignUpForm(AuthenticationForm):
+class SignUpForm(UserCreationForm):
     username = forms.CharField(
         max_length=100,
         required=True,
@@ -44,7 +44,7 @@ class SignUpForm(AuthenticationForm):
             }
         ),
     )
-    password = forms.CharField(
+    password1 = forms.CharField(
         max_length=50,
         required=True,
         widget=forms.PasswordInput(
@@ -59,6 +59,11 @@ class SignUpForm(AuthenticationForm):
         ),
     )
 
+    password2 = forms.CharField(
+        label="Confirm password",
+        widget=forms.PasswordInput(attrs={"class": "form-control"}),
+    )
+
     class Meta:
         model = User
-        fields = ["username", "password"]
+        fields = ["username", "password1", "password2"]

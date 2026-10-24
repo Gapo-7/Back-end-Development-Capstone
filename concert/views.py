@@ -5,6 +5,8 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 from django.urls import reverse
 from django.contrib.auth.hashers import make_password
+from django.conf import settings
+import os
 
 from concert.forms import LoginForm, SignUpForm
 from concert.models import Concert, ConcertAttending
@@ -14,7 +16,12 @@ import requests as req
 # Create your views here.
 
 def signup(request):
-    pass
+    form = SignUpForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        login(request, user)
+        return HttpResponseRedirect(reverse("index"))
+    return render(request, "signup.html", {"form": form})
 
 
 def index(request):
@@ -22,29 +29,55 @@ def index(request):
 
 
 def songs(request):
-    # songs = {"songs":[]}
-    # return render(request, "songs.html", {"songs": [insert list here]})
-    pass
+    endpoint = os.environ.get("SONGS_SERVICE_URL", "http://127.0.0.1:8081")
+    try:
+        response = req.get(f"{endpoint.rstrip('/')}/song", timeout=5)
+        response.raise_for_status()
+        song_list = response.json()
+    except (req.RequestException, ValueError):
+        song_list = []
+    return render(request, "songs.html", {"songs": song_list})
 
 
 def photos(request):
-    # photos = []
-    # return render(request, "photos.html", {"photos": photos})
-    pass
+    endpoint = os.environ.get("PICTURES_SERVICE_URL", "http://127.0.0.1:8080")
+    try:
+        response = req.get(f"{endpoint.rstrip('/')}/picture", timeout=5)
+        response.raise_for_status()
+        photo_list = response.json()
+    except (req.RequestException, ValueError):
+        photo_list = []
+    return render(request, "photos.html", {"photos": photo_list})
 
 def login_view(request):
-    pass
+    form = LoginForm(request, data=request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        login(request, form.get_user())
+        return HttpResponseRedirect(reverse("index"))
+    return render(request, "login.html", {"form": form})
 
 def logout_view(request):
-    pass
+    logout(request)
+    return HttpResponseRedirect(reverse("index"))
 
 def concerts(request):
-    pass
+    concert_list = []
+    for concert in Concert.objects.order_by("date"):
+        attending = None
+        if request.user.is_authenticated:
+            attending = ConcertAttending.objects.filter(
+                concert=concert, user=request.user
+            ).first()
+        concert_list.append({
+            "concert": concert,
+            "status": attending.attending if attending else "-",
+        })
+    return render(request, "concerts.html", {"concerts": concert_list})
 
 
 def concert_detail(request, id):
     if request.user.is_authenticated:
-        obj = Concert.objects.get(pk=id)
+        obj = get_object_or_404(Concert, pk=id)
         try:
             status = obj.attendee.filter(user=request.user).first().attending
         except:

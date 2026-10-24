@@ -6,7 +6,9 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.contrib.auth.hashers import make_password
 from django.conf import settings
+import json
 import os
+from pathlib import Path
 
 from concert.forms import LoginForm, SignUpForm
 from concert.models import Concert, ConcertAttending
@@ -42,11 +44,12 @@ def songs(request):
 def photos(request):
     endpoint = os.environ.get("PICTURES_SERVICE_URL", "http://127.0.0.1:8080")
     try:
-        response = req.get(f"{endpoint.rstrip('/')}/picture", timeout=5)
+        response = req.get(f"{endpoint.rstrip('/')}/picture", timeout=3)
         response.raise_for_status()
         photo_list = response.json()
     except (req.RequestException, ValueError):
-        photo_list = []
+        snapshot = Path(__file__).resolve().parent / "data" / "pictures.json"
+        photo_list = json.loads(snapshot.read_text(encoding="utf-8"))
     return render(request, "photos.html", {"photos": photo_list})
 
 def login_view(request):

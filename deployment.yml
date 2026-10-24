@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
         - name: djangoserver
-          image: djangoserver:latest
-          imagePullPolicy: IfNotPresent
+          image: us.icr.io/sn-labs-u240928/djangoserver:1
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           env:
@@ -24,9 +24,9 @@ spec:
             - name: DJANGO_DEBUG
               value: "0"
             - name: PICTURES_SERVICE_URL
-              value: "http://pictures:8080"
+              value: "https://pictures.2gbzi6h6x5jf.us-south.codeengine.appdomain.cloud"
             - name: SONGS_SERVICE_URL
-              value: "http://songs:8080"
+              value: "http://songs-sn-labs-u240928.labs-prod-openshift-san-a45631dc5778dc6371c67d206ba9ae5c-0000.us-east.containers.appdomain.cloud"
 ---
 apiVersion: v1
 kind: Service
